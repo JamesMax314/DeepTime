@@ -4,7 +4,7 @@ public class QuadCreator : MonoBehaviour
 {
     public int linearRes = 50;
     public float xLen = 1;
-    public float yLen = 1;
+    public float zLen = 1;
     public Vector3 position = new Vector3(0, 0, 0);
 
     public void Start()
@@ -14,7 +14,12 @@ public class QuadCreator : MonoBehaviour
 
         MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 
-        Mesh mesh = MeshGen.create(linearRes, xLen, yLen, position);
+        Mesh mesh = MeshGen.create(linearRes, xLen, zLen, position);
         meshFilter.mesh = mesh;
+    }
+
+    public void Update()
+    {
+
     }
 }

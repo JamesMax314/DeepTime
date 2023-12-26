@@ -3,20 +3,20 @@ using System;
 
 public class MeshGen : MonoBehaviour
 {
-    public static Mesh create(int linearRes, float xLen, float yLen, Vector3 position)
+    public static Mesh create(int linearRes, float xLen, float zLen, Vector3 position)
     {
         Mesh mesh = new Mesh();
 
         float xStep = xLen / linearRes;
-        float yStep = yLen / linearRes;
+        float zStep = zLen / linearRes;
         Vector3[] vertices = new Vector3[linearRes*linearRes];
 
         for (int i=0; i<linearRes; i++)
         {
             float xPos = position[0]+i*xStep;
             for (int j=0; j<linearRes; j++) {
-                float yPos = position[1]+j*yStep;
-                vertices[i*linearRes+j] = new Vector3(xPos, yPos, 0);
+                float zPos = position[2]+j*zStep;
+                vertices[i*linearRes+j] = new Vector3(xPos, position[1], zPos);
             }
         }
 
