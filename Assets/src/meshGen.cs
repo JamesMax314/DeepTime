@@ -3,7 +3,7 @@ using System;
 
 public class MeshGen : MonoBehaviour
 {
-    public static Mesh create(int linearRes, float xLen, float zLen, Vector3 position)
+    public static Mesh create(int linearRes, float xLen, float zLen, Vector3 position, float peakHeight)
     {
         Mesh mesh = new Mesh();
 
@@ -16,7 +16,8 @@ public class MeshGen : MonoBehaviour
             float xPos = position[0]+i*xStep;
             for (int j=0; j<linearRes; j++) {
                 float zPos = position[2]+j*zStep;
-                vertices[i*linearRes+j] = new Vector3(xPos, position[1], zPos);
+                float height = Mathf.PerlinNoise(xPos/peakHeight, zPos/peakHeight)*peakHeight;
+                vertices[i*linearRes+j] = new Vector3(xPos, position[1]+height, zPos);
             }
         }
 
@@ -27,8 +28,8 @@ public class MeshGen : MonoBehaviour
             for (int j=0; j<linearRes-1; j++) {
                 indices[count] = i*linearRes + j;
                 indices[count+1] = i*linearRes + j+1;
-                indices[count+2] = (i+1)*linearRes+j;
-
+                indices[count+2] = (i+1)*linearRes+j;            
+                
                 indices[count+3] = linearRes*linearRes - (i*linearRes + j) - 1;
                 indices[count+4] = linearRes*linearRes - (i*linearRes + j+1) - 1;
                 indices[count+5] = linearRes*linearRes - ((i+1)*linearRes+j) - 1;
@@ -36,13 +37,31 @@ public class MeshGen : MonoBehaviour
             }
         }
 
-        Vector3[] normals = new Vector3[linearRes*linearRes];
-        Array.Fill(normals, -Vector3.forward);
+        // Vector3[] normals = computeNormals(vertices, indices);
+        // Array.Fill(normals, -Vector3.forward);
 
         mesh.vertices = vertices;
         mesh.triangles = indices;
-        mesh.normals = normals;
+        // mesh.normals = normals;
 
         return mesh;
+    }
+
+    public static Vector3[] computeNormals(Vector3[] vertices, int[] indices)
+    {
+        Vector3[] normals = new Vector3[vertices.Length];
+        // printf("indices size: %u\n", indices.size());
+
+        for (int i=0; i<(int)(indices.Length/3); i++) {
+            Vector3 AB = vertices[indices[3*i+1]] - vertices[indices[3*i]];
+            Vector3 AC = vertices[indices[3*i+2]] - vertices[indices[3*i]];
+            Vector3 norm = Vector3.Cross(AB, AC).normalized;
+            for (int j=0; j<3; j++) {
+                normals[indices[3*i+j]] = norm;
+            }
+
+        }
+
+        return normals;
     }
 }
