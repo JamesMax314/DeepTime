@@ -2,103 +2,64 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CameraControlls : MonoBehaviour
+public class Example : MonoBehaviour
 {
-   private Vector3 camPos;
+   private CharacterController controller;
+   private Vector3 playerVelocity;
+   private bool groundedPlayer;
    private Vector2 camRot;
-   private Vector3 velocity;
-   private bool freeMove = true;
-   private bool grounded = false;
-   public float cameraSpeed = 1F;
+   private bool freeMove = false;
+
+   public float playerSpeed = 2.0f;
+   public float jumpHeight = 1.0f;
+   public float gravityValue = -9.81f;
    public float cameraSensitivity = 10F;
-   public float jumpVelocity = 10;
-   public float gravity = -10;
+   public float freeMoveSpeed = 10F;
 
-   void Start()
+   private void Start()
    {
-      camPos = this.transform.position;
-   }
-
-   private void OnTriggerEnter(Collider other)
-   {
-      //Check for a match with the specified name on any GameObject that collides with your GameObject
-      if (other.gameObject.name == "BaseMesh")
-      {
-         grounded = true;
-         Debug.Log("grunded");
-      }
-   }
-
-   private void OnTriggerExit(Collider other)
-   {
-      //Check for a match with the specified name on any GameObject that collides with your GameObject
-      if (other.gameObject.name == "BaseMesh")
-      {
-         grounded = false;
-         Debug.Log("un grunded");
-      }
-   }
-
-   private void OnTriggerStay(Collider other)
-   {
-      //Check for a match with the specified name on any GameObject that collides with your GameObject
-      if (other.gameObject.name == "BaseMesh")
-      {
-         grounded = false;
-         Debug.Log("un grunded");
-      }
+      controller = gameObject.AddComponent<CharacterController>();
+      controller.minMoveDistance = 1e-5F;
    }
 
    void Update()
    {
-      if (Input.GetKey(KeyCode.W))
-      {
-         this.transform.position += new Vector3(this.transform.forward.x, 0, this.transform.forward.z)*cameraSpeed*Time.deltaTime;
-      }
-      if (Input.GetKey(KeyCode.S))
-      {
-         this.transform.position -= new Vector3(this.transform.forward.x, 0, this.transform.forward.z)*cameraSpeed*Time.deltaTime;
-      }
-      if (Input.GetKey(KeyCode.A))
-      {
-         this.transform.position -= this.transform.right*cameraSpeed*Time.deltaTime;
-      }
-      if (Input.GetKey(KeyCode.D))
-      {
-         this.transform.position += this.transform.right*cameraSpeed*Time.deltaTime;
-      }
+      groundedPlayer = controller.isGrounded;
 
       if (Input.GetKeyUp(KeyCode.F))
       {
          freeMove = !freeMove;
       }
 
-      if (freeMove)
-      {
-         if (Input.GetKey(KeyCode.Space))
-         {
-            this.transform.position += new Vector3(0, this.transform.up.y, 0)*cameraSpeed*Time.deltaTime;
-         }
-         if (Input.GetKey(KeyCode.LeftShift))
-         {
-            this.transform.position -= new Vector3(0, this.transform.up.y, 0)*cameraSpeed*Time.deltaTime;
-         }
-      } else {
-         if (Input.GetKey(KeyCode.Space) && grounded)
-         {
-            velocity = new Vector3(0, jumpVelocity, 0);
-         }
-      }
-
-      if (!grounded && !freeMove)
-      {
-         velocity += new Vector3(0, gravity*Time.deltaTime, 0);
-         this.transform.position += velocity*Time.deltaTime;
-      }
-
       camRot.x += Input.GetAxis("Mouse X") * cameraSensitivity;
       camRot.y += Input.GetAxis("Mouse Y") * cameraSensitivity;
 
       this.transform.localRotation = Quaternion.Euler(-camRot.y, camRot.x, 0);
+      Quaternion lookMat = Quaternion.Euler(0, camRot.x, 0);
+
+      if (freeMove)
+      {
+         Vector3 move = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+         if (Input.GetKey(KeyCode.LeftShift))
+         {
+            move.y = -1;
+         } else if (Input.GetKey(KeyCode.Space))
+         {
+            move.y = 1;
+         }
+         controller.Move(lookMat * move * Time.deltaTime * freeMoveSpeed);
+      } else
+      {
+         Vector3 move = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+         controller.Move(lookMat * move * Time.deltaTime * playerSpeed);
+
+         if (Input.GetButtonDown("Jump") && groundedPlayer)
+         {
+            playerVelocity.y = Mathf.Sqrt(jumpHeight * -3.0f * gravityValue);
+         }
+
+         playerVelocity.y += gravityValue * Time.deltaTime;
+         controller.Move(playerVelocity * Time.deltaTime);
+      }
    }
 }
