@@ -14,7 +14,7 @@ public class Example : MonoBehaviour
    public float jumpHeight = 1.0f;
    public float gravityValue = -9.81f;
    public float cameraSensitivity = 10F;
-   public float freeMoveSpeed = 10F;
+   public float freeMoveSpeed = 100F;
 
    private void Start()
    {

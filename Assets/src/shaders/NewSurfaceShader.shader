@@ -2,10 +2,10 @@ Shader "Unlit/NewUnlitShader"
 {
     Properties
     {
-        _LevelGrass ("Grass Level", Float) = 0.25
-        _LevelMud ("Mud Level", Float) = 0.4
-        _LevelStone ("Stone Level", Float) = 0.6
-        _LevelSnow ("Snow Level", Float) = 0.75
+        _LevelGrass ("Grass Level", Range (0, 1)) = 0.25
+        _LevelMud ("Mud Level", Range (0, 1)) = 0.4
+        _LevelStone ("Stone Level", Range (0, 1)) = 0.6
+        _LevelSnow ("Snow Level", Range (0, 1)) = 0.75
         _BlendFactor ("BlendFactor", Float) = 0.5
         _PeakHeight ("PeakHeight", Float) = 1
 
@@ -79,10 +79,9 @@ Shader "Unlit/NewUnlitShader"
                 float seaStrength = -rockStrength;
 
                 float x = i.worldPos.y/_PeakHeight;
-                float3 col = (colourGrass*gaussian(x, _LevelGrass, _BlendFactor)/2
-                + colourMud*gaussian(x, _LevelMud, _BlendFactor)/2 
+                float3 col = colourMud*gaussian(x, _LevelMud, _BlendFactor)/2 
                 + colourStone*gaussian(x, _LevelStone, _BlendFactor)/2 
-                + colourSnow*gaussian(x, _LevelSnow, _BlendFactor))/2;
+                + colourSnow*gaussian(x, _LevelSnow, _BlendFactor)/2;
 
                 // Standard Lambertian diffuse lighting
                 float3 lightDir = normalize(float3(0, 10000, 0) - i.worldPos);
