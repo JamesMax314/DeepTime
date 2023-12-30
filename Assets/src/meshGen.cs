@@ -15,7 +15,7 @@ public class geoTerrain
         mLinearRes = 255;
         mXLen = (float)1e4;
         mZLen = (float)1e4;
-        mPeakHeight = (float)2e3;
+        mPeakHeight = (float)4e3;
         genHeights();
     }
 
@@ -41,6 +41,7 @@ public class geoTerrain
         float zStep = mZLen / mLinearRes;
         Vector3[] vertices = new Vector3[mLinearRes*mLinearRes];
         Vector2[] uvs = new Vector2[mLinearRes*mLinearRes];
+        Color[] colors = new Color[mLinearRes*mLinearRes];
 
         for (int i=0; i<mLinearRes; i++)
         {
@@ -49,12 +50,13 @@ public class geoTerrain
                 float zPos = -mZLen/2+j*zStep;
                 vertices[i*mLinearRes+j] = new Vector3(xPos, heightMap[i, j], zPos);
                 uvs[i*mLinearRes+j] = new Vector2((float)i/mLinearRes, (float)j/mLinearRes);
+                colors[i*mLinearRes+j] = Color.black;
             }
         }
 
         int numIndices = (mLinearRes-1)*(mLinearRes-1)*2*3;
         int[] indices = new int[numIndices];
-        int count =0 ;
+        int count = 0;
         for (int i=0; i<mLinearRes-1; i++) {
             for (int j=0; j<mLinearRes-1; j++) {
                 indices[count] = i*mLinearRes + j;
@@ -71,6 +73,7 @@ public class geoTerrain
         mesh.vertices = vertices;
         mesh.triangles = indices;
         mesh.uv = uvs;
+        mesh.colors = colors;
         mesh.RecalculateNormals();
 
         return mesh;

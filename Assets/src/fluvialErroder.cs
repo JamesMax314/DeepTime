@@ -3,9 +3,10 @@ using System;
 
 public class fluvialErroder
 {
-    private geoTerrain mTerrain;
-    private int numDrops = 1000;
-    private int numSteps = 100;
+    public geoTerrain mTerrain;
+    private int numDrops = 100;
+    private int numSteps = 1000;
+    private float inertia = 0.1F;
     public fluvialErroder(ref geoTerrain terrain)
     {
         mTerrain = terrain;
@@ -13,58 +14,120 @@ public class fluvialErroder
 
     public void errode()
     {
+        Color[] colors = new Color[mTerrain.mLinearRes*mTerrain.mLinearRes];
+        Array.Fill(colors, Color.black);
         for (int dropIndex=0; dropIndex<numDrops; dropIndex++)
         {
             // Random start location
             int xInd = (int)(mTerrain.mLinearRes*UnityEngine.Random.Range(0f, 1f));
-            int yInd = (int)(mTerrain.mLinearRes*UnityEngine.Random.Range(0f, 1f));
+            xInd = Mathf.RoundToInt(Mathf.Max(Mathf.Min(xInd, mTerrain.mLinearRes-2), 0));
+            int zInd = (int)(mTerrain.mLinearRes*UnityEngine.Random.Range(0f, 1f));
+            zInd = Mathf.RoundToInt(Mathf.Max(Mathf.Min(zInd, mTerrain.mLinearRes-2), 0));
 
             float xPos = xInd;
-            float yPos = yInd;
+            float zPos = zInd;
 
-            float dx=0, dy=0;
+            float dx=0, dz=0;
+            float sediment = 100;
 
             for (int stepIndex=0; stepIndex<numSteps; stepIndex++)
             {
-                float[] grad = ComputeGradientVector(xInd, yInd);
-                dx = grad[0];
-                dy = grad[1];
 
-                float dl = Mathf.Sqrt(dx*dx + dy*dy);
+                // Current heights
+                float h00=mTerrain.heightMap[xInd, zInd];
+                float h10=mTerrain.heightMap[xInd+1, zInd];
+                float h01=mTerrain.heightMap[xInd  , zInd+1];
+                float h11=mTerrain.heightMap[xInd+1, zInd+1];
+
+                float h=h00;
+
+                // calc gradient
+                float gx=h00+h01-h10-h11;
+                float gz=h00+h10-h01-h11;
+
+                // calc next pos
+                dx=(dx-gx)*inertia+gx;
+                dz=(dx-gx)*inertia+gz;
+
+                float dl = Mathf.Sqrt(dx*dx + dz*dz);
                 dx /= dl;
-                dy /= dl;
+                dz /= dl;
 
-                float nXPos = xPos+dx;
-                float nYPos = yPos+dy;
+                float nxPos=xPos+dx;
+                float nzPos=zPos+dz;
 
-                int nXInd = (int)Mathf.Floor(xPos);
-                int nYInd = (int)Mathf.Floor(yPos);
+                int nxInd = Mathf.RoundToInt(Mathf.Max(Mathf.Min(nxPos, mTerrain.mLinearRes-2), 0));
+                int nzInd = Mathf.RoundToInt(Mathf.Max(Mathf.Min(nzPos, mTerrain.mLinearRes-2), 0));
 
-                float deltaActualNX = nXPos-nXInd;
-                float deltaActualNY = nYPos-nYInd;
+                // Difference between actual point and index
+                float nxFloat = nxPos-nxInd;
+                float nzFloat = nzPos-nzInd;
 
-                float nextHeight = mTerrain.heightMap[nXInd, nYInd];
-                float currentHeight = mTerrain.heightMap[xInd, yInd];
+
+                // Next heights
+                float nh00=mTerrain.heightMap[nxInd, nzInd];
+                float nh10=mTerrain.heightMap[nxInd+1, nzInd];
+                float nh01=mTerrain.heightMap[nxInd  , nzInd+1];
+                float nh11=mTerrain.heightMap[nxInd+1, nzInd+1];
+
+                // Interpolate height from surrounding heights
+                float nh=(nh00*(1-nxFloat)+nh10*nxFloat)*(1-nzFloat)+(nh01*(1-nxFloat)+nh11*nxFloat)*nzFloat;
+
+                // if higher than current, try to deposit sediment up to neighbour height
+                if (nh>=h)
+                {
+                    // Height required to overcome obstacle
+                    float ds=(nh-h)+0.001f;
+
+                    // If can't make it over
+                    if (ds>=sediment)
+                    {
+                        // deposit all sediment and stop
+                        ds=sediment;
+                        DepositArround(nxInd, nzInd, ds);
+                        sediment=0;
+                        break;
+                    }
+
+                    DepositArround(nxInd, nzInd, ds);
+                    sediment-=ds;
+                }
+
+
+
+                int drawWidth = 2;
+                for (int i=0; i<drawWidth; i++)
+                {
+                    for (int j=0; j<drawWidth; j++) {
+                        int ix = xInd+i;
+                        int iz = zInd+j;
+                        if (ix >=0 && ix < mTerrain.mLinearRes && iz >=0 && iz < mTerrain.mLinearRes)
+                        {
+                            colors[ix*mTerrain.mLinearRes+iz] = Color.red;
+                        }
+                    }
+                }
+
+                xPos = nxPos;
+                zPos = nzPos;
+                xInd = nxInd;
+                zInd = nzInd;
             }
-
         }
-
+        mTerrain.genMeshFromHeight();
+        // mTerrain.mesh.colors = colors;
     }
 
-    private float[] ComputeGradientVector(int x, int y)
+    private void DepositArround(int i, int j, float sediment)
     {
-        int xLen = mTerrain.mLinearRes;
-        int yLen = mTerrain.mLinearRes;
+        DepositAt(i, j, sediment*0.25F);
+        DepositAt(i+1, j, sediment*0.25F);
+        DepositAt(i, j+1, sediment*0.25F);
+        DepositAt(i+1, j+1, sediment*0.25F);
+    }
 
-        float[] gradient = new float[2];
-
-        // Compute gradient in the x direction
-        float dx = (x < xLen - 1) ? mTerrain.heightMap[x, y + 1] - mTerrain.heightMap[x, y] : 0;
-        gradient[0] = dx;
-
-        // Compute gradient in the y direction
-        float dy = (y < yLen - 1) ? mTerrain.heightMap[x + 1, y] - mTerrain.heightMap[x, y] : 0;
-        gradient[1] = dy;
-        return gradient;
+    private void DepositAt(int i, int j, float dh)
+    {
+        mTerrain.heightMap[i, j] += dh;
     }
 }

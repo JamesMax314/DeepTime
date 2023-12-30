@@ -7,26 +7,35 @@ public class QuadCreator : MonoBehaviour
     public float zLen = 1;
     public float peakHeight = 1;
     public Vector3 position = new Vector3(0, 0, 0);
+    private Mesh mesh;
+    private fluvialErroder fluvial;
+    private MeshFilter meshFilter;
+    private MeshCollider meshCollider;
+    private geoTerrain terrain;
 
     public void Start()
     {
         // MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
         // meshRenderer.sharedMaterial = new Material(Shader.Find("Standard"));
 
-        MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
+        meshFilter = gameObject.AddComponent<MeshFilter>();
 
-        MeshCollider meshCollider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
+        meshCollider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
 
-        geoTerrain terrain = new geoTerrain();
-        fluvialErroder fluvial = new fluvialErroder(ref terrain);
-        // fluvial.errode();
-        Mesh mesh = terrain.genMeshFromHeight();
+        terrain = new geoTerrain();
+        fluvial = new fluvialErroder(ref terrain);
+        // Mesh mesh = terrain.genMeshFromHeight();
+        fluvial.errode();
+        mesh = fluvial.mTerrain.mesh;
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
     }
 
     public void Update()
     {
-
+        fluvial.errode();
+        mesh = fluvial.mTerrain.mesh;
+        meshFilter.mesh = mesh;
+        meshCollider.sharedMesh = mesh;
     }
 }
