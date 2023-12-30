@@ -17,8 +17,10 @@ public class QuadCreator : MonoBehaviour
 
         MeshCollider meshCollider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
 
-        Mesh mesh = MeshGen.create(linearRes, xLen, zLen, position, peakHeight);
-        mesh.RecalculateNormals();
+        geoTerrain terrain = new geoTerrain();
+        fluvialErroder fluvial = new fluvialErroder(ref terrain);
+        // fluvial.errode();
+        Mesh mesh = terrain.genMeshFromHeight();
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
     }

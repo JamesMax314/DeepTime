@@ -1,80 +1,109 @@
 using UnityEngine;
 using System;
 
-public class MeshGen : MonoBehaviour
+public class geoTerrain
 {
-    private static float FractalNoise(float x, float y, float lenX, float lenY){
-        int numFreq = 30;
-        float result = 0;
-        float weightSum = 0;
-        for (int i=1; i<numFreq; i++)
-        {
-            result += Mathf.PerlinNoise(x*i+lenX*i, y*i+lenY*i)*1/i;
-            weightSum += 1/i;
-        }
+    public int mLinearRes;
+    public float mXLen;
+    public float mZLen;
+    private float mPeakHeight;
+    public float[,] heightMap;
+    public Mesh mesh;
 
-        return result/weightSum - weightSum;
+    public geoTerrain()
+    {
+        mLinearRes = 255;
+        mXLen = (float)1e4;
+        mZLen = (float)1e4;
+        mPeakHeight = (float)2e3;
+        genHeights();
     }
 
-    public static Mesh create(int linearRes, float xLen, float zLen, Vector3 position, float peakHeight)
+    public geoTerrain(int linearRes, float xLen, float zLen, float peakHeight)
     {
-        Mesh mesh = new Mesh();
+        mLinearRes = linearRes;
+        mXLen = xLen;
+        mZLen = zLen;
+        mPeakHeight = peakHeight;
+        genHeights();
+    }
 
-        float xStep = xLen / linearRes;
-        float zStep = zLen / linearRes;
-        Vector3[] vertices = new Vector3[linearRes*linearRes];
-
-        for (int i=0; i<linearRes; i++)
+    public Mesh genMeshFromHeight()
+    {
+        mesh = new Mesh();
+        if (mLinearRes > 255) 
         {
-            float xPos = position[0]+i*xStep;
-            for (int j=0; j<linearRes; j++) {
-                float zPos = position[2]+j*zStep;
-                float height = FractalNoise(xPos/xLen, zPos/zLen, xLen, zLen)*peakHeight;
-                vertices[i*linearRes+j] = new Vector3(xPos, position[1]+height, zPos);
+            // Set to 32-bit indices to support high resolution meshes
+            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        }
+
+        float xStep = mXLen / mLinearRes;
+        float zStep = mZLen / mLinearRes;
+        Vector3[] vertices = new Vector3[mLinearRes*mLinearRes];
+        Vector2[] uvs = new Vector2[mLinearRes*mLinearRes];
+
+        for (int i=0; i<mLinearRes; i++)
+        {
+            float xPos = -mXLen/2+i*xStep;
+            for (int j=0; j<mLinearRes; j++) {
+                float zPos = -mZLen/2+j*zStep;
+                vertices[i*mLinearRes+j] = new Vector3(xPos, heightMap[i, j], zPos);
+                uvs[i*mLinearRes+j] = new Vector2((float)i/mLinearRes, (float)j/mLinearRes);
             }
         }
 
-        int numIndices = (linearRes-1)*(linearRes-1)*2*3;
+        int numIndices = (mLinearRes-1)*(mLinearRes-1)*2*3;
         int[] indices = new int[numIndices];
         int count =0 ;
-        for (int i=0; i<linearRes-1; i++) {
-            for (int j=0; j<linearRes-1; j++) {
-                indices[count] = i*linearRes + j;
-                indices[count+1] = i*linearRes + j+1;
-                indices[count+2] = (i+1)*linearRes+j;            
+        for (int i=0; i<mLinearRes-1; i++) {
+            for (int j=0; j<mLinearRes-1; j++) {
+                indices[count] = i*mLinearRes + j;
+                indices[count+1] = i*mLinearRes + j+1;
+                indices[count+2] = (i+1)*mLinearRes+j;            
                 
-                indices[count+3] = linearRes*linearRes - (i*linearRes + j) - 1;
-                indices[count+4] = linearRes*linearRes - (i*linearRes + j+1) - 1;
-                indices[count+5] = linearRes*linearRes - ((i+1)*linearRes+j) - 1;
+                indices[count+3] = mLinearRes*mLinearRes - (i*mLinearRes + j) - 1;
+                indices[count+4] = mLinearRes*mLinearRes - (i*mLinearRes + j+1) - 1;
+                indices[count+5] = mLinearRes*mLinearRes - ((i+1)*mLinearRes+j) - 1;
                 count += 6;
             }
         }
 
-        // Vector3[] normals = computeNormals(vertices, indices);
-        // Array.Fill(normals, -Vector3.forward);
-
         mesh.vertices = vertices;
         mesh.triangles = indices;
-        // mesh.normals = normals;
+        mesh.uv = uvs;
+        mesh.RecalculateNormals();
 
         return mesh;
     }
 
-    public static Vector3[] computeNormals(Vector3[] vertices, int[] indices)
+    private void genHeights()
     {
-        Vector3[] normals = new Vector3[vertices.Length];
-        // printf("indices size: %u\n", indices.size());
+        heightMap = new float[mLinearRes, mLinearRes];
+        float xStep = mXLen / mLinearRes;
+        float zStep = mZLen / mLinearRes;
 
-        for (int i=0; i<(int)(indices.Length/3); i++) {
-            Vector3 AB = vertices[indices[3*i+1]] - vertices[indices[3*i]];
-            Vector3 AC = vertices[indices[3*i+2]] - vertices[indices[3*i]];
-            Vector3 norm = Vector3.Cross(AB, AC).normalized;
-            for (int j=0; j<3; j++) {
-                normals[indices[3*i+j]] = norm;
+        for (int i=0; i<mLinearRes; i++)
+        {
+            float xPos = mXLen/2+i*xStep;
+            for (int j=0; j<mLinearRes; j++) {
+                float zPos = mZLen/2+j*zStep;
+                float height = FractalNoise(xPos/mXLen, zPos/mZLen)*mPeakHeight;
+                heightMap[i, j] = height;
             }
+        }
+    }
 
+    private float FractalNoise(float x, float y){
+        int numFreq = 8;
+        float result = 0;
+        float weightSum = 0;
+        for (int i=0; i<numFreq; i++)
+        {
+            float freq = Mathf.Pow(2, i+1);
+            result += Mathf.PerlinNoise((x+mXLen)*freq, (y+mZLen)*freq)/freq;
+            weightSum += 1/freq;
         }
 
-        return normals;
+        return result/weightSum - weightSum;
     }
 }
