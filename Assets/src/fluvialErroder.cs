@@ -4,7 +4,7 @@ using System;
 public class fluvialErroder
 {
     public geoTerrain mTerrain;
-    private int numDrops = 100;
+    private int numDrops = 10;
     private int numSteps = 1000;
     private float inertia = 0.1F;
     public fluvialErroder(ref geoTerrain terrain)
@@ -27,8 +27,12 @@ public class fluvialErroder
             float xPos = xInd;
             float zPos = zInd;
 
+            float ds;
+
             float dx=0, dz=0;
-            float sediment = 100;
+            float sediment = 0;
+            float v=0, w=1, Kq=10, Kd=0.02F, Kr=0.9F, Kg=10;
+            float minSlope = 0.05F;
 
             for (int stepIndex=0; stepIndex<numSteps; stepIndex++)
             {
@@ -59,6 +63,11 @@ public class fluvialErroder
                 int nxInd = Mathf.RoundToInt(Mathf.Max(Mathf.Min(nxPos, mTerrain.mLinearRes-2), 0));
                 int nzInd = Mathf.RoundToInt(Mathf.Max(Mathf.Min(nzPos, mTerrain.mLinearRes-2), 0));
 
+                if (nxInd == 0 || nxInd == mTerrain.mLinearRes-2 || nzInd == 0 || nzInd == mTerrain.mLinearRes-2)
+                {
+                    break;
+                }
+
                 // Difference between actual point and index
                 float nxFloat = nxPos-nxInd;
                 float nzFloat = nzPos-nzInd;
@@ -77,7 +86,7 @@ public class fluvialErroder
                 if (nh>=h)
                 {
                     // Height required to overcome obstacle
-                    float ds=(nh-h)+0.001f;
+                    ds=(nh-h)+0.001f;
 
                     // If can't make it over
                     if (ds>=sediment)
@@ -93,6 +102,37 @@ public class fluvialErroder
                     sediment-=ds;
                 }
 
+                // compute transport capacity
+                float dh=h-nh;
+                float slope=dh;
+
+                float q=Mathf.Max(slope, minSlope)*v*w*Kq;
+
+                // deposit/erode (don't erode more than dh)
+                ds=sediment-q;
+                if (ds>=0)
+                {
+                    // deposit
+                    ds*=Kd;
+                    //ds=minval(ds, 1.0f);
+                    if (sediment-ds>0)
+                    {
+                        DepositArround(nxInd, nzInd, ds);
+                    }
+                } else {
+                    // erode
+                    ds*=Kr*0.0001F;
+                    // ds=Mathf.Max(ds, -dh*0.99f);
+                    // if (ds > -dh)
+                    {
+                        DepositArround(nxInd, nzInd, ds);
+                    }
+                }
+
+                dh-=ds;
+                // sediment -= ds;
+                sediment = Mathf.Max(sediment, 0);
+                v=Mathf.Sqrt(v*v+Kg*dh);
 
 
                 int drawWidth = 2;
@@ -115,7 +155,7 @@ public class fluvialErroder
             }
         }
         mTerrain.genMeshFromHeight();
-        // mTerrain.mesh.colors = colors;
+        mTerrain.mesh.colors = colors;
     }
 
     private void DepositArround(int i, int j, float sediment)

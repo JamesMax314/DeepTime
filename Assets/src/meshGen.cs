@@ -97,7 +97,7 @@ public class geoTerrain
     }
 
     private float FractalNoise(float x, float y){
-        int numFreq = 8;
+        int numFreq = 4;
         float result = 0;
         float weightSum = 0;
         for (int i=0; i<numFreq; i++)
