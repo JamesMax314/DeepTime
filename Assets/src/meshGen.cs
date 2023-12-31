@@ -49,7 +49,8 @@ public class geoTerrain
             float xPos = -mXLen/2+i*xStep;
             for (int j=0; j<mLinearRes; j++) {
                 float zPos = -mZLen/2+j*zStep;
-                vertices[i*mLinearRes+j] = new Vector3(xPos, heightMap[i, j]*mPeakHeight, zPos);
+                float yPos = Mathf.Max(0, Mathf.Min(1, heightMap[i, j]))*mPeakHeight;
+                vertices[i*mLinearRes+j] = new Vector3(xPos, yPos, zPos);
                 uvs[i*mLinearRes+j] = new Vector2((float)i/mLinearRes, (float)j/mLinearRes);
                 colors[i*mLinearRes+j] = Color.black;
             }

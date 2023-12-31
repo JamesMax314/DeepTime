@@ -25,7 +25,7 @@ public class QuadCreator : MonoBehaviour
         terrain = new geoTerrain();
         fluvial = new fluvialErroder(ref terrain);
         // Mesh mesh = terrain.genMeshFromHeight();
-        fluvial.errode();
+        fluvial.Errode();
         mesh = fluvial.mTerrain.mesh;
         meshFilter.mesh = mesh;
         // meshCollider.sharedMesh = mesh;
@@ -33,9 +33,9 @@ public class QuadCreator : MonoBehaviour
 
     public void Update()
     {
-        fluvial.errode();
-        mesh = terrain.mesh;
-        meshFilter.mesh = mesh;
+        // fluvial.Errode();
+        // mesh = terrain.mesh;
+        // meshFilter.mesh = mesh;
         // meshCollider.sharedMesh = mesh;
     }
 }
