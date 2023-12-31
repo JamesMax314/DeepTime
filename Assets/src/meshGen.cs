@@ -16,6 +16,7 @@ public class geoTerrain
         mXLen = (float)1e4;
         mZLen = (float)1e4;
         mPeakHeight = (float)4e3;
+        mesh = new Mesh();
         genHeights();
     }
 
@@ -25,12 +26,12 @@ public class geoTerrain
         mXLen = xLen;
         mZLen = zLen;
         mPeakHeight = peakHeight;
+        mesh = new Mesh();
         genHeights();
     }
 
     public Mesh genMeshFromHeight()
     {
-        mesh = new Mesh();
         if (mLinearRes > 255) 
         {
             // Set to 32-bit indices to support high resolution meshes
@@ -48,7 +49,7 @@ public class geoTerrain
             float xPos = -mXLen/2+i*xStep;
             for (int j=0; j<mLinearRes; j++) {
                 float zPos = -mZLen/2+j*zStep;
-                vertices[i*mLinearRes+j] = new Vector3(xPos, heightMap[i, j], zPos);
+                vertices[i*mLinearRes+j] = new Vector3(xPos, heightMap[i, j]*mPeakHeight, zPos);
                 uvs[i*mLinearRes+j] = new Vector2((float)i/mLinearRes, (float)j/mLinearRes);
                 colors[i*mLinearRes+j] = Color.black;
             }
@@ -90,10 +91,13 @@ public class geoTerrain
             float xPos = mXLen/2+i*xStep;
             for (int j=0; j<mLinearRes; j++) {
                 float zPos = mZLen/2+j*zStep;
-                float height = FractalNoise(xPos/mXLen, zPos/mZLen)*mPeakHeight;
+                float height = FractalNoise(xPos/mXLen, zPos/mZLen);
                 heightMap[i, j] = height;
             }
         }
+
+        Debug.Log(GetMaxValue(heightMap));
+        Debug.Log(GetMinValue(heightMap));
     }
 
     private float FractalNoise(float x, float y){
@@ -107,6 +111,50 @@ public class geoTerrain
             weightSum += 1/freq;
         }
 
-        return result/weightSum - weightSum;
+        return result/weightSum;
+    }
+
+    float GetMaxValue(float[,] array)
+    {
+        // Initialize max with the minimum possible integer value
+        float max = float.MinValue;
+
+        // Iterate through the 2D array
+        for (int i = 0; i < array.GetLength(0); i++)
+        {
+            for (int j = 0; j < array.GetLength(1); j++)
+            {
+                // Compare the current element with the current max
+                if (array[i, j] > max)
+                {
+                    // Update max if the current element is greater
+                    max = array[i, j];
+                }
+            }
+        }
+
+        return max;
+    }
+
+    float GetMinValue(float[,] array)
+    {
+        // Initialize max with the minimum possible integer value
+        float max = float.MaxValue;
+
+        // Iterate through the 2D array
+        for (int i = 0; i < array.GetLength(0); i++)
+        {
+            for (int j = 0; j < array.GetLength(1); j++)
+            {
+                // Compare the current element with the current max
+                if (array[i, j] < max)
+                {
+                    // Update max if the current element is greater
+                    max = array[i, j];
+                }
+            }
+        }
+
+        return max;
     }
 }

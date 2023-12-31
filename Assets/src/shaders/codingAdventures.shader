@@ -29,7 +29,7 @@ Shader "Custom/Terrain" {
             float grassBlendHeight = _GrassSlopeThreshold * (1-_GrassBlendAmount);
             float grassWeight = 1-saturate((slope-grassBlendHeight)/(_GrassSlopeThreshold-grassBlendHeight));
             o.Albedo = _GrassColour * grassWeight + _RockColour * (1-grassWeight);
-            if (IN.color.r == 1)
+            if (IN.color.r != 0 || IN.color.g != 0 || IN.color.b != 0)
             {
                 o.Albedo = IN.color;
             }

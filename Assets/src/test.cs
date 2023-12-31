@@ -10,7 +10,7 @@ public class QuadCreator : MonoBehaviour
     private Mesh mesh;
     private fluvialErroder fluvial;
     private MeshFilter meshFilter;
-    private MeshCollider meshCollider;
+    // private MeshCollider meshCollider;
     private geoTerrain terrain;
 
     public void Start()
@@ -20,7 +20,7 @@ public class QuadCreator : MonoBehaviour
 
         meshFilter = gameObject.AddComponent<MeshFilter>();
 
-        meshCollider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
+        // meshCollider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
 
         terrain = new geoTerrain();
         fluvial = new fluvialErroder(ref terrain);
@@ -28,14 +28,14 @@ public class QuadCreator : MonoBehaviour
         fluvial.errode();
         mesh = fluvial.mTerrain.mesh;
         meshFilter.mesh = mesh;
-        meshCollider.sharedMesh = mesh;
+        // meshCollider.sharedMesh = mesh;
     }
 
     public void Update()
     {
         fluvial.errode();
-        mesh = fluvial.mTerrain.mesh;
+        mesh = terrain.mesh;
         meshFilter.mesh = mesh;
-        meshCollider.sharedMesh = mesh;
+        // meshCollider.sharedMesh = mesh;
     }
 }
