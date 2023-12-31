@@ -232,7 +232,7 @@ MonoBehaviour:
   jumpHeight: 10
   gravityValue: -9.81
   cameraSensitivity: 10
-  freeMoveSpeed: 1000
+  freeMoveSpeed: 2000
 --- !u!1 &1842794125
 GameObject:
   m_ObjectHideFlags: 0

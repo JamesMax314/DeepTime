@@ -12,7 +12,7 @@ public class geoTerrain
 
     public geoTerrain()
     {
-        mLinearRes = 255;
+        mLinearRes = 512;
         mXLen = (float)1e4;
         mZLen = (float)1e4;
         mPeakHeight = (float)4e3;
@@ -87,12 +87,14 @@ public class geoTerrain
         float xStep = mXLen / mLinearRes;
         float zStep = mZLen / mLinearRes;
 
+        float fractalOffset = mLinearRes*UnityEngine.Random.Range(0f, 1f);
+
         for (int i=0; i<mLinearRes; i++)
         {
             float xPos = mXLen/2+i*xStep;
             for (int j=0; j<mLinearRes; j++) {
                 float zPos = mZLen/2+j*zStep;
-                float height = FractalNoise(xPos/mXLen, zPos/mZLen);
+                float height = FractalNoise(xPos/mXLen+fractalOffset, zPos/mZLen+fractalOffset);
                 heightMap[i, j] = height;
             }
         }

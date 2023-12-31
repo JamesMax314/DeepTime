@@ -4,9 +4,9 @@ using System;
 public class fluvialErroder
 {
     public geoTerrain mTerrain;
-    private int numDrops = 10;
-    private int numSteps = 200;
-    public int radius = 2;
+    private int numDrops = 100;
+    private int numSteps = 64;
+    public int radius = 8;
     public fluvialErroder(ref geoTerrain terrain)
     {
         mTerrain = terrain;
@@ -24,8 +24,8 @@ public class fluvialErroder
 
         // Parameters
         float Pintertia = 0.3f; // Inertia
-        float Pminslope = 0.001f; // Allows errosion of flat regions
-        float Pcapacity = 0.0001f; // Carry capacity modifier
+        float Pminslope = 0.01f; // Allows errosion of flat regions
+        float Pcapacity = 8f; // Carry capacity modifier
         float Pdeposition = 0.2f; // Fraction of eccess sediment that is dropped by deposition
         float Perrosion = 0.7f; // Fraction of remaining carry capacity that is taken up by errosion
         float Pgravity = 10f; // Controlls water speedup
@@ -76,7 +76,7 @@ public class fluvialErroder
                 // Compute new interpolated height
                 heightNew = getInterpH(posNew);
                 float deltaHeight = heightNew - height;
-    
+
 
                 // If enters pit deposit to overcome
                 if (deltaHeight > Pminslope)
@@ -84,12 +84,12 @@ public class fluvialErroder
                     if (sediment < deltaHeight)
                     {
                         // Drop all sediment
-                        // DepositHeight(pos, sediment);
+                        DepositeLocal(pos, sediment);
                         break;
                     }
 
                     // Deposite deltaHeight 
-                    // DepositHeight(pos, deltaHeight);
+                    DepositeLocal(pos, deltaHeight);
                     sediment -= deltaHeight;
                 } else {
                     // else compute new carry capacity
@@ -99,22 +99,27 @@ public class fluvialErroder
                     {
                         // if sediment > carry capacity deposite some fraction
                         float toDeposite = (sediment - carryCapacity)*Pdeposition;
-                        DepositHeight(pos, toDeposite);
+                        DepositeLocal(pos, toDeposite);
+                        sediment -= toDeposite;
                     } else {
                         // if sediment < carry capacity take up some fraction
                         // Never take up more sediment than height difference
                         float toErrode = Mathf.Min((carryCapacity-sediment)*Perrosion, -deltaHeight);
-                        // DepositHeight(pos, -toErrode);
+                        DepositHeight(pos, -toErrode);
+                        // Debug.Log("Errode: "+ toErrode);
+                        sediment += toErrode;
                     }
                 }
 
                 // Update speed of motion
-                vel = Mathf.Sqrt(vel*vel + deltaHeight*Pgravity);
+                vel = Mathf.Sqrt(vel*vel - deltaHeight*Pgravity);
                 // Evaporate water from drop
                 water *= 1-Pevaporation;
                 pos = posNew;
 
-                int drawWidth = 2;
+                // Debug.Log(sediment);
+
+                int drawWidth = 1;
                 for (int i=0; i<drawWidth; i++)
                 {
                     for (int j=0; j<drawWidth; j++) {
@@ -122,7 +127,7 @@ public class fluvialErroder
                         int iz = (int)pos.y+j;
                         if (ix >=0 && ix < mTerrain.mLinearRes && iz >=0 && iz < mTerrain.mLinearRes)
                         {
-                            colors[ix*mTerrain.mLinearRes+iz] = new Color((float)stepIndex/(float)numSteps, 0, 0, 1f);
+                            colors[ix*mTerrain.mLinearRes+iz].r += 1f/(float)numSteps;
                         }
                     }
                 }
@@ -135,11 +140,28 @@ public class fluvialErroder
     private bool CheckPos(Vector2 pos)
     {
         bool safe = true;
-        if (pos.x < 0 || pos.x > mTerrain.mLinearRes || pos.y < 0 || pos.y > mTerrain.mLinearRes)
+        if (pos.x < 0 || pos.x >= mTerrain.mLinearRes || pos.y < 0 || pos.y >= mTerrain.mLinearRes)
         {
             safe = false;
         }
         return safe;
+    }
+
+    private void DepositeLocal(Vector2 pos, float deltaHeight)
+    {
+        // Get closest grid point
+        int ix = Mathf.FloorToInt(pos.x);
+        int iy = Mathf.FloorToInt(pos.y);
+
+        // Offsets to actual position
+        float u = pos.x - ix;
+        float v = pos.y - iy;
+
+        // Extrapolate deposition
+        DepositAt(new Vector2(ix, iy), deltaHeight*(1-u)*(1-v));
+        DepositAt(new Vector2(ix+1, iy), deltaHeight*(u)*(1-v));
+        DepositAt(new Vector2(ix, iy+1), deltaHeight*(1-u)*(v));
+        DepositAt(new Vector2(ix+1, iy+1), deltaHeight*(u)*(v));
     }
 
     private void DepositHeight(Vector2 pos, float deltaHeight)
@@ -157,23 +179,25 @@ public class fluvialErroder
         {
             for (int j=0; j<radius; j++)
             {
-                Vector2 position = new Vector2(ix+i-halfRad, iy+j-halfRad);
-                float distance = Vector2.Distance(position, pos);
+                Vector2 position = new Vector2(ix+i, iy+j);
+                float distance = (position-pos).magnitude;
                 weights[i, j] = Mathf.Max(0, radius-distance);
-                weightSum /= weights[i, j];
+                weightSum += weights[i, j];
             }
         }
-
-        for (int i=0; i<radius; i++)
-        {
-            for (int j=0; j<radius; j++)
+        // Debug.Log("WeightSum: "+weightSum);
+        if (weightSum > 0) {
+            for (int i=0; i<radius; i++)
             {
-                Vector2 position = new Vector2(ix+i-halfRad, iy+j-halfRad);
-                weights[i, j] /= weightSum;
-                DepositAt(position, deltaHeight*weights[i, j]);
+                for (int j=0; j<radius; j++)
+                {
+                    Vector2 position = new Vector2(ix+i, iy+j);
+                    weights[i, j] /= weightSum;
+                    // Debug.Log("weight: "+weights[i, j]);
+                    DepositAt(position, deltaHeight*weights[i, j]);
+                }
             }
         }
-        mTerrain.genMeshFromHeight();
     }
 
     private void DepositAt(Vector2 pos, float deltaHeight)
@@ -236,7 +260,7 @@ public class fluvialErroder
 
     private float getH(int xCoord, int yCoord)
     {
-        float height = 0;
+        float height = 1;
         if (xCoord >=0 && xCoord < mTerrain.mLinearRes && yCoord >=0 && yCoord < mTerrain.mLinearRes)
         {
             height = mTerrain.heightMap[xCoord, yCoord];

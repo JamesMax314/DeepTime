@@ -33,9 +33,9 @@ public class QuadCreator : MonoBehaviour
 
     public void Update()
     {
-        // fluvial.Errode();
-        // mesh = terrain.mesh;
-        // meshFilter.mesh = mesh;
+        fluvial.Errode();
+        mesh = terrain.mesh;
+        meshFilter.mesh = mesh;
         // meshCollider.sharedMesh = mesh;
     }
 }
