@@ -6,11 +6,13 @@ public class QuadCreator : MonoBehaviour
     public float xLen = 1;
     public float zLen = 1;
     public float peakHeight = 1;
+    public int erosionSteps = 100;
+    private int step = 0;
     public Vector3 position = new Vector3(0, 0, 0);
     private Mesh mesh;
     private fluvialErroder fluvial;
     private MeshFilter meshFilter;
-    // private MeshCollider meshCollider;
+    private MeshCollider meshCollider;
     private geoTerrain terrain;
 
     public void Start()
@@ -20,7 +22,7 @@ public class QuadCreator : MonoBehaviour
 
         meshFilter = gameObject.AddComponent<MeshFilter>();
 
-        // meshCollider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
+        meshCollider = gameObject.AddComponent(typeof(MeshCollider)) as MeshCollider;
 
         terrain = new geoTerrain();
         fluvial = new fluvialErroder(ref terrain);
@@ -33,9 +35,16 @@ public class QuadCreator : MonoBehaviour
 
     public void Update()
     {
-        fluvial.Errode();
-        mesh = terrain.mesh;
-        meshFilter.mesh = mesh;
-        // meshCollider.sharedMesh = mesh;
+        if (step < erosionSteps)
+        {
+            fluvial.Errode();
+            mesh = terrain.mesh;
+            meshFilter.mesh = mesh;
+        }
+        if (step == erosionSteps)
+        {
+            meshCollider.sharedMesh = mesh;
+        }
+        step ++;
     }
 }

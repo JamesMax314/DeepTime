@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: textMaterial
+  m_Name: Mountain
   m_Shader: {fileID: 4800000, guid: 3b1ac21d68f954ba29a5f5f490ebe2cd, type: 3}
   m_Parent: {fileID: 2100000, guid: 8c924aa28a1644661870c543fe3985f0, type: 2}
   m_ModifiedSerializedProperties: 28
@@ -23,6 +23,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: d4c94c405a6674ee59202d223f6e6d8e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 5ad5f6f8def184dc08bcac92defaab05, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -30,17 +34,17 @@ Material:
     m_Ints: []
     m_Floats:
     - _Anisotropy: 0
-    - _GrassBlendAmount: 0.763
+    - _GrassBlendAmount: 0.435
     - _GrassHeightFadePower: 2.38
     - _GrassMaxHeight: 0.149
-    - _GrassSlopeThreshold: 0
+    - _GrassSlopeThreshold: 0.109
     - _Metalness: 0
     - _RimFac: 0.373
     - _Roughness: 0
     - _UVSec: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _GrassColour: {r: 0.38581347, g: 0.5660378, b: 0.20558918, a: 1}
+    - _GrassColour: {r: 1, g: 1, b: 1, a: 1}
     - _MainCol: {r: 0.6226415, g: 0.39148477, b: 0.2966358, a: 1}
-    - _RockColour: {r: 0.23584908, g: 0.17243683, b: 0.19178945, a: 1}
+    - _RockColour: {r: 0.5377358, g: 0.5098344, b: 0.5172748, a: 1}
   m_BuildTextureStacks: []
